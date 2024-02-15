@@ -1,6 +1,8 @@
 // Instantiate router - DO NOT MODIFY
 const express = require('express');
 const router = express.Router();
+const { Tree } = require('../db/models')
+const { Op } = require("sequelize");
 
 /**
  * BASIC PHASE 1, Step A - Import model
@@ -26,7 +28,11 @@ const router = express.Router();
 router.get('/', async (req, res, next) => {
     let trees = [];
 
-    // Your code here 
+    trees = await Tree.findAll({
+        // attributes: ['heightFt', 'tree', 'id']
+    })
+
+
 
     res.json(trees);
 });
@@ -42,9 +48,14 @@ router.get('/', async (req, res, next) => {
  */
 router.get('/:id', async (req, res, next) => {
     let tree;
-
     try {
         // Your code here 
+        // tree = await Tree.findOne({
+        //     where: {
+        //         id: req.params.id
+        //     }
+        // })
+        tree = await Tree.findByPk(req.params.id)
 
         if (tree) {
             res.json(tree);
@@ -55,7 +66,7 @@ router.get('/:id', async (req, res, next) => {
                 details: 'Tree not found'
             });
         }
-    } catch(err) {
+    } catch (err) {
         next({
             status: "error",
             message: `Could not find tree ${req.params.id}`,
@@ -71,7 +82,7 @@ router.get('/:id', async (req, res, next) => {
  * Protocol: POST
  * Parameters: None
  * Request Body: JSON Object
- *   - Properties: name, location, height, size
+ *   - Properties: tree, location, heightFt, 
  * Response: JSON Object
  *   - Property: status
  *     - Value: success
@@ -82,11 +93,22 @@ router.get('/:id', async (req, res, next) => {
  */
 router.post('/', async (req, res, next) => {
     try {
+        const { tree, location, heightFt, groundCircumferenceFt } = req.body
+        console.log(tree, location, heightFt, groundCircumferenceFt)
+
+        const treeMaker = await Tree.create({
+            tree,
+            location,
+            heightFt,
+            groundCircumferenceFt
+        })
+
         res.json({
+            treeMaker,
             status: "success",
             message: "Successfully created new tree",
         });
-    } catch(err) {
+    } catch (err) {
         next({
             status: "error",
             message: 'Could not create new tree',
@@ -117,11 +139,21 @@ router.post('/', async (req, res, next) => {
  */
 router.delete('/:id', async (req, res, next) => {
     try {
+        const deletedTree = await Tree.findByPk(req.params.id)
+        await deletedTree.destroy()
+        
+        // await Tree.destroy({
+        //     where: {
+        //         id: req.params.id
+        //     }
+        // });
+
         res.json({
+            deletedTree,
             status: "success",
             message: `Successfully removed tree ${req.params.id}`,
         });
-    } catch(err) {
+    } catch (err) {
         next({
             status: "error",
             message: `Could not remove tree ${req.params.id}`,
@@ -129,6 +161,10 @@ router.delete('/:id', async (req, res, next) => {
         });
     }
 });
+
+// router.update('/:id', async (req, res, next) => {
+//     const { tree, location, heightFt, groundCircumferenceFt } = req.body
+// })
 
 /**
  * INTERMEDIATE PHASE 4 - UPDATE a tree row in the database
@@ -138,7 +174,7 @@ router.delete('/:id', async (req, res, next) => {
  * Protocol: PUT
  * Parameter: id
  * Request Body: JSON Object
- *   - Properties: id, name, location, height, size
+ *   - Properties: id, tree, location, heightFt, 
  * Response: JSON Object
  *   - Property: status
  *     - Value: success
@@ -165,9 +201,24 @@ router.delete('/:id', async (req, res, next) => {
  *     - Value: Tree not found
  */
 router.put('/:id', async (req, res, next) => {
+
     try {
         // Your code here 
-    } catch(err) {
+        const { tree, location, heightFt, groundCircumferenceFt } = req.body
+        const updateTree = await Tree.findByPk(req.params.id)
+    
+        updateTree.update({
+           tree:  tree || updateTree.tree,
+           location:  location || updateTree.location,
+            height: heightFt || updateTree.heightFt,
+            groundCircumferenceFt : groundCircumferenceFt || updateTree.groundCircumferenceFt
+        })
+
+        res.json( {
+            updateTree,
+            message: "Updated success"
+        })
+    } catch (err) {
         next({
             status: "error",
             message: 'Could not update new tree',
@@ -178,8 +229,7 @@ router.put('/:id', async (req, res, next) => {
 
 /**
  * INTERMEDIATE BONUS PHASE 1 (OPTIONAL), Step B:
- *   List of all trees with tree name like route parameter
- *
+ *   List of all trees with tree tree like route heightFtte
  * Path: /search/:value
  * Protocol: GET
  * Parameters: value
@@ -188,8 +238,19 @@ router.put('/:id', async (req, res, next) => {
  *   - Ordered by the heightFt from tallest to shortest
  */
 router.get('/search/:value', async (req, res, next) => {
-    let trees = [];
+    // console.log(req.params.value)
+    const newValue = req.params.value
 
+    let trees = [];
+    trees = await Tree.findAll({
+        attributes: ['heightFt', 'tree', 'id'],
+        where: {
+          location:  {
+            [Op.substring]: newValue
+          }
+        },
+        order: [['heightFt', 'DESC']]
+    })
 
     res.json(trees);
 });
