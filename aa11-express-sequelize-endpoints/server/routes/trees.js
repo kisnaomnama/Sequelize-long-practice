@@ -29,7 +29,7 @@ router.get('/', async (req, res, next) => {
     let trees = [];
 
     trees = await Tree.findAll({
-        // attributes: ['heightFt', 'tree', 'id']
+    order: [['heightFt', 'DESC']]
     })
 
 
@@ -93,18 +93,18 @@ router.get('/:id', async (req, res, next) => {
  */
 router.post('/', async (req, res, next) => {
     try {
-        const { tree, location, heightFt, groundCircumferenceFt } = req.body
-        console.log(tree, location, heightFt, groundCircumferenceFt)
+        const { name, location, height, size } = req.body
+        // console.log(name, location, height, size)
 
         const treeMaker = await Tree.create({
-            tree,
-            location,
-            heightFt,
-            groundCircumferenceFt
+            tree: name,
+            location: location,
+            heightFt: height,
+            groundCircumferenceFt : size
         })
 
         res.json({
-            treeMaker,
+            data: treeMaker,
             status: "success",
             message: "Successfully created new tree",
         });
@@ -140,6 +140,17 @@ router.post('/', async (req, res, next) => {
 router.delete('/:id', async (req, res, next) => {
     try {
         const deletedTree = await Tree.findByPk(req.params.id)
+
+        if(!deletedTree){
+            res.status(400)
+            res.json({
+            status: "not-found",
+            message: `Could not remove tree ${req.params.id}`,
+            details: "Tree not found"
+            })
+        }
+
+
         await deletedTree.destroy()
         
         // await Tree.destroy({
@@ -149,7 +160,7 @@ router.delete('/:id', async (req, res, next) => {
         // });
 
         res.json({
-            deletedTree,
+            data: deletedTree,
             status: "success",
             message: `Successfully removed tree ${req.params.id}`,
         });
@@ -161,6 +172,17 @@ router.delete('/:id', async (req, res, next) => {
         });
     }
 });
+
+// router.use((err, req, res, next) => {
+//     const statusCode = err.status || 400
+//     res.status(statusCode);
+
+//     res.json({
+//         status: "not-found",
+//         message: err.message,
+//         details: "Tree not found"
+//     });
+// })
 
 // router.update('/:id', async (req, res, next) => {
 //     const { tree, location, heightFt, groundCircumferenceFt } = req.body
@@ -203,20 +225,48 @@ router.delete('/:id', async (req, res, next) => {
 router.put('/:id', async (req, res, next) => {
 
     try {
-        // Your code here 
-        const { tree, location, heightFt, groundCircumferenceFt } = req.body
+    //     // Your code here 
+        const { id, name, location, height, size } = req.body
+
         const updateTree = await Tree.findByPk(req.params.id)
-    
-        updateTree.update({
-           tree:  tree || updateTree.tree,
-           location:  location || updateTree.location,
-            height: heightFt || updateTree.heightFt,
-            groundCircumferenceFt : groundCircumferenceFt || updateTree.groundCircumferenceFt
-        })
+
+        if(!updateTree){
+            res.status(400)
+            res.json({
+            status: "not-found",
+            message: `Could not update tree ${req.params.id}`,
+            details: "Tree not found"
+            })
+        }
+
+    //     if(updateTree === req.params.id){
+
+    //     await updateTree.update({
+    //         tree:  name || updateTree.tree,
+    //         location:  location || updateTree.location,
+    //         heightFt: height || updateTree.heightFt,
+    //         groundCircumferenceFt : size || updateTree.groundCircumferenceFt
+    //     })
+    //}
+
+        await Tree.update(
+        {
+            tree:  name || updateTree.tree,
+            location:  location || updateTree.location,
+            heightFt: height || updateTree.heightFt,
+            groundCircumferenceFt : size || updateTree.groundCircumferenceFt
+        },
+        {
+            where: {
+                id:updateTree.id
+            }
+        },
+    )
 
         res.json( {
-            updateTree,
-            message: "Updated success"
+            data:updateTree,
+            status:"success",
+            message: "Successfully updated tree"
         })
     } catch (err) {
         next({
