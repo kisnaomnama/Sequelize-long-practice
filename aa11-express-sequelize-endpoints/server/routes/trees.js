@@ -29,7 +29,7 @@ router.get('/', async (req, res, next) => {
     let trees = [];
 
     trees = await Tree.findAll({
-    order: [['heightFt', 'DESC']]
+        order: [['heightFt', 'DESC']]
     })
 
 
@@ -100,7 +100,7 @@ router.post('/', async (req, res, next) => {
             tree: name,
             location: location,
             heightFt: height,
-            groundCircumferenceFt : size
+            groundCircumferenceFt: size
         })
 
         res.json({
@@ -141,18 +141,18 @@ router.delete('/:id', async (req, res, next) => {
     try {
         const deletedTree = await Tree.findByPk(req.params.id)
 
-        if(!deletedTree){
+        if (!deletedTree) {
             res.status(400)
             res.json({
-            status: "not-found",
-            message: `Could not remove tree ${req.params.id}`,
-            details: "Tree not found"
+                status: "not-found",
+                message: `Could not remove tree ${req.params.id}`,
+                details: "Tree not found"
             })
         }
 
 
         await deletedTree.destroy()
-        
+
         // await Tree.destroy({
         //     where: {
         //         id: req.params.id
@@ -221,53 +221,52 @@ router.delete('/:id', async (req, res, next) => {
  *     - Value: Could not update tree <id>
  *   - Property: details
  *     - Value: Tree not found
- */
+*/
+
 router.put('/:id', async (req, res, next) => {
-
     try {
-    //     // Your code here 
-        const { id, name, location, height, size } = req.body
-
-        const updateTree = await Tree.findByPk(req.params.id)
-
-        if(!updateTree){
-            res.status(400)
-            res.json({
-            status: "not-found",
-            message: `Could not update tree ${req.params.id}`,
-            details: "Tree not found"
-            })
+        const { id, name, location, height, size } = req.body;
+        if (!req.params.id || !req.body.id || req.params.id !== req.body.id.toString()) {
+            next({
+                status: "error",
+                message: "Could not update tree",
+                details: `${req.params.id} does not match ${req.body.id}`
+            });
         }
 
-    //     if(updateTree === req.params.id){
-
-    //     await updateTree.update({
-    //         tree:  name || updateTree.tree,
-    //         location:  location || updateTree.location,
-    //         heightFt: height || updateTree.heightFt,
-    //         groundCircumferenceFt : size || updateTree.groundCircumferenceFt
-    //     })
-    //}
-
-        await Tree.update(
-        {
-            tree:  name || updateTree.tree,
-            location:  location || updateTree.location,
-            heightFt: height || updateTree.heightFt,
-            groundCircumferenceFt : size || updateTree.groundCircumferenceFt
-        },
-        {
-            where: {
-                id:updateTree.id
+        else {
+            const updatedTree = await Tree.findByPk(id);
+            if (updatedTree) {
+                
+                if (name) {
+                    updatedTree.tree = name;
+                }
+                if (location) {
+                    updatedTree.location = location;
+                }
+                if (height) {
+                    updatedTree.heightFt = height;
+                }
+                if (size) {
+                    updatedTree.groundCircumferenceFt = size;
+                }
+                updatedTree.save();
+                res.json({
+                    status: "success",
+                    message: "Successfully updated tree",
+                    data: updatedTree
+                });
             }
-        },
-    )
 
-        res.json( {
-            data:updateTree,
-            status:"success",
-            message: "Successfully updated tree"
-        })
+            else {
+                next({
+                    status: "not-found",
+                    message: `Could not update tree ${req.params.id}`,
+                    details: 'Tree not found'
+                });
+            }
+
+        }
     } catch (err) {
         next({
             status: "error",
@@ -277,7 +276,49 @@ router.put('/:id', async (req, res, next) => {
     }
 });
 
-/**
+//     const { id, name, location, height, size } = req.body
+
+//     const updateTree = await Tree.findByPk(req.params.id)
+
+//     if(!updateTree){
+//         res.status(400)
+//         res.json({
+//         status: "not-found",
+//         message: `Could not update tree ${req.params.id}`,
+//         details: "Tree not found"
+//         })
+//     }
+
+
+//     if(updateTree.id === req.params.id){
+//     await updateTree.update({
+//         tree:  name || updateTree.tree,
+//         location:  location || updateTree.location,
+//         heightFt: height || updateTree.heightFt,
+//         groundCircumferenceFt : size || updateTree.groundCircumferenceFt
+//     })
+
+//     updateTree.save()
+// }
+
+//     await Tree.update(
+//     {
+//         tree:  name || updateTree.tree,
+//         location:  location || updateTree.location,
+//         heightFt: height || updateTree.heightFt,
+//         groundCircumferenceFt : size || updateTree.groundCircumferenceFt
+//     },
+//     {
+//         where: {
+//             id:updateTree.id
+//         }
+//     },
+// )
+
+
+
+
+/** 
  * INTERMEDIATE BONUS PHASE 1 (OPTIONAL), Step B:
  *   List of all trees with tree tree like route heightFtte
  * Path: /search/:value
@@ -287,6 +328,7 @@ router.put('/:id', async (req, res, next) => {
  *   - Object properties: heightFt, tree, id
  *   - Ordered by the heightFt from tallest to shortest
  */
+
 router.get('/search/:value', async (req, res, next) => {
     // console.log(req.params.value)
     const newValue = req.params.value
@@ -295,9 +337,9 @@ router.get('/search/:value', async (req, res, next) => {
     trees = await Tree.findAll({
         attributes: ['heightFt', 'tree', 'id'],
         where: {
-          location:  {
-            [Op.substring]: newValue
-          }
+            location: {
+                [Op.substring]: newValue
+            }
         },
         order: [['heightFt', 'DESC']]
     })

@@ -45,7 +45,7 @@ app.use((req, res) => {
 
 // Set port and listen for incoming requests - DO NOT MODIFY
 if (require.main === module) {
-    const port = 1000;
+    const port = 5000;
     app.listen(port, () => console.log('Server is listening on port', port));
 } else {
     module.exports = app;
